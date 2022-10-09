@@ -1,68 +1,77 @@
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-from os import path
+from selenium.webdriver.common.keys import Keys
 import os
 import time
+from dotenv import load_dotenv
 
 
 class Discord:
+    
+    load_dotenv()
 
-    isTest = True
+    email = os.getenv("DISCORD_EMAIL")
+    password = os.getenv("DISCORD_PASSWORD")
+    is_test = os.getenv("IS_TEST")
+
     driver = None
 
     def __init__(self):
-        os.environ['WDM_LOG_LEVEL'] = '0'
-
         options = webdriver.ChromeOptions()
-        # Get relative path
-        dumps_dir = path.expandvars(r'%LOCALAPPDATA%\Google\Chrome\User Data')
-        options.add_argument(r"--user-data-dir=" + dumps_dir)
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--headless")
+        options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
-        options.add_argument('--disable-extensions')
         self.driver = webdriver.Chrome(
             executable_path=ChromeDriverManager().install(),
             options=options
         )
 
-    def is_logged_in(self):
+    def make_login(self):
         self.driver.get("https://discord.com/app")
-        current_url = self.driver.current_url
-        if current_url == "https://discord.com/login":
-            return False
-
-        return True
+        email_field = self.driver.find_element(by=By.ID, value='uid_47')
+        password_field = self.driver.find_element(by=By.ID, value='uid_50')
+        email_field.send_keys(self.email)
+        password_field.send_keys(self.password)
+        password_field.send_keys(Keys.ENTER)
 
     def search_users(self):
-        time.sleep(1)
-        self.driver.find_element("div[class^='tabBar'] div:nth-child(2)").click()
+        # Go to all friends tab
+        all_friends = self.driver.find_elements(by=By.CLASS_NAME, value='item-3mHhwr')[1]
+        all_friends.click()
 
-        # Get user tags
-        users_blocks = self.driver.find_element(
-            "div[class^='peopleColumn'] div[class^='peopleListItem']")
+        # counter to stop
+        users_counter = self.driver.find_elements(by=By.CLASS_NAME, value="listItemContents-2n2Uy9")
+        stop_count = len(users_counter)
 
-        # Ask for confirmation
-        print(str(len(users_blocks)) + " users were found")
-        answer = input("Are you sure you want to deleted them? [y/n]\n")
-        if not answer or answer[0].lower() != 'y':
-            print('You did not indicate approval')
-            self.exit()
+        while stop_count != 0:
+            users_block = self.driver.find_elements(by=By.CLASS_NAME, value="listItemContents-2n2Uy9")
 
-        # Loop through users blocks
-        for userBlock in users_blocks:
-            userBlock.find_element("div[class^='actions'] div:nth-child(2)").click()
-            time.sleep(0.1)
-            self.driver.find_element("#friend-row-remove-friend").click()
-            time.sleep(0.1)
+            # Loop through users blocks
+            for user in users_block:
+                print("Deleting...")
 
-            # Set isTest variable to test the code
-            if self.isTest:
-                self.driver.find_element("div[class^='layerContainer'] button[type='button']").click()
-            else:
-                self.driver.find_element("div[class^='layerContainer'] button[type='submit']").click()
+                user.find_elements(by=By.CLASS_NAME, value='actionButton-3-B2x-')[1].click()
+                time.sleep(0.1)
+                self.driver.find_element(by=By.ID, value='friend-row-remove-friend').click()
+                time.sleep(0.1)
 
-            time.sleep(0.1)
+                # Set isTest variable to test the code
+                button = None
+                if self.is_test:
+                    # Click cancel button
+                    button = self.driver.find_element(by=By.CSS_SELECTOR, value=".lookLink-15mFoz")
+                else:
+                    # Click delete button
+                    button = self.driver.find_element(by=By.CSS_SELECTOR, value=".lookFilled-yCfaCM")
+                button.click()
+                time.sleep(0.3)
+
+                stop_count = len(self.driver.find_elements(by=By.CLASS_NAME, value="listItemContents-2n2Uy9"))
+
 
     def exit(self):
         print("Exiting program...")
         self.driver.quit()
-        exit(1)

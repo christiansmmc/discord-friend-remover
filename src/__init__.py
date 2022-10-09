@@ -1,30 +1,19 @@
-import subprocess
+from time import sleep
 
-from src.Discord import Discord
-
-
-# Kill any existing chrome windows
-def kill_chrome():
-    try:
-        subprocess.check_output('taskkill /im chrome.exe 2>NUL', shell=True)
-    except subprocess.CalledProcessError:
-        pass
-
+from Discord import Discord
 
 discord = None
 try:
     print("Starting process...")
-    kill_chrome()
+
     discord = Discord()
 
     print("Attempting to open dashboard...")
-    if discord.is_logged_in():
-        discord.search_users()
-    else:
-        print("You are not logged in. Log in before executing!")
+
+    discord.make_login()
+    sleep(5)
+    discord.search_users()
+
 finally:
-    # Close browser when everything is done
-    try:
-        discord.exit()
-    except:
-        kill_chrome()
+    discord.exit()
+    print("Done")
