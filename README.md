@@ -7,9 +7,11 @@ A way to automatically remove all your discord friends
 
 2) Install webdriver manager `pip install webdriver-manager`
 
-3) Change `isTest` variable to `False` before running code
+3) Create .env file by duplicating .env.example
 
-**Important**: Leave code untouched to execute a test. No users will be deleted
+4) Edit with your discord email, password and change is_test to False to delete all friends
+
+**Important**: Leave is_test untouched to execute a test. No users will be deleted
 
 ***USE AT YOUR OWN RISK***
 https://discord.com/terms
